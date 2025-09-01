@@ -2,29 +2,11 @@
 extern crate proc_macro;
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{parse_macro_input, DeriveInput, ItemStruct, Data, Fields};
+use std::collections::HashMap;
+use syn::{Data, DeriveInput, Fields, ItemStruct, parse_macro_input};
 
 #[proc_macro_attribute]
 pub fn define_as_grid(_attr: TokenStream, item: TokenStream) -> TokenStream {
-    // let input = parse_macro_input!(item as DeriveInput);
-    // let original_name = &input.ident;
-
-    // Construct a new name for the derived struct
-    // let derived_name = syn::Ident::new(&format!("{}Grid", original_name), original_name.span());
-
-    // // Extract fields from the original struct (example for named fields)
-    // let fields = if let Data::Struct(data_struct) = &input.data {
-    //     if let Fields::Named(fields_named) = &data_struct.fields {
-    //         &fields_named.named
-    //     } else {
-    //         panic!("Only named fields are supported for this example.");
-    //     }
-    // } else {
-    //     panic!("Only structs are supported for this example.");
-    // };
-
-    // let field_names = fields.iter().map(|f| &f.ident);
-    // let field_types = fields.iter().map(|f| &f.ty);
     let input = item.clone();
     let original = item.clone();
     let input_struct = parse_macro_input!(item as ItemStruct);
@@ -33,37 +15,86 @@ pub fn define_as_grid(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let struct_data = if let Data::Struct(data_struct) = ast.data {
         data_struct
     } else {
-        panic!("MyMacro can only be applied to structs");
+        panic!("Ariadne can only be applied to structs");
     };
-        let fields = if let Fields::Named(fields_named) = struct_data.fields {
+    let fields = if let Fields::Named(fields_named) = struct_data.fields {
         fields_named.named
     } else {
-        panic!("MyMacro only supports structs with named fields");
+        panic!("Ariadne only supports structs with named fields");
     };
-    let required_field_found = fields.iter().any(|field| {
-        field.ident.as_ref().map_or(false, |ident| ident == "id")
-    });
+    let required_field_found = fields
+        .iter()
+        .any(|field| field.ident.as_ref().map_or(false, |ident| ident == "id"));
 
     if !required_field_found {
         panic!("Struct must contain a field named 'id'");
     }
 
-
     let original_name = input_struct.ident;
     let derived_name = syn::Ident::new(&format!("{}Grid", original_name), original_name.span());
-     let fields = &input_struct.fields;
-     let foo = quote!(pub foobar);
-
 
     let exp = quote! {
         #original_struct
 
+        #[derive(Debug)]
         pub struct #derived_name {
-            pub list: Vec<#original_name>
+            pub entities: HashMap<i64, #original_name>,
+            pub map: Array2D<Option<i64>>
         }
 
         impl #derived_name {
-            // add etc.
+            fn new(width: usize, height: usize) -> Self {
+                return #derived_name {
+                    entities: HashMap::new(),
+                    map: Array2D::filled_with(None, width, height)
+                }
+            }
+
+            fn add(&mut self, entity: &#original_name, x: usize, y: usize) {
+                self.entities.insert(entity.id, entity.clone());
+                self.map[(x, y)] = Some(entity.id);
+            }
+
+            fn remove_by_id(&mut self, id: i64) {
+                self.entities.remove(&id);
+                let mut remove_x: Option<usize> = None;
+                let mut remove_y: Option<usize> = None;
+                for (idx, row_iter) in self.map.rows_iter().enumerate() {
+                    for (idy, id_in_map) in row_iter.enumerate() {
+                        if !id_in_map.is_some() {
+                            continue;
+                        }
+                        if id_in_map.unwrap() == id {
+                            remove_x = Some(idx);
+                            remove_y = Some(idy);
+                        }
+                    }
+                }
+                if remove_x.is_some() && remove_y.is_some() {
+                    self.map[(remove_x.unwrap(), remove_y.unwrap())] = None;
+                }
+            }
+
+            fn remove_by_position(&mut self, x: usize, y: usize) {
+                let id_to_remove = self.map[(x, y)];
+                if !id_to_remove.is_some() {
+                    return;
+                }
+                self.entities.remove(&id_to_remove.unwrap());
+                self.map[(x, y)] = None;
+            }
+            // TODO: get_by_id
+            fn get_by_id(&mut self, id: i64) -> Option<&#original_name> {
+                return self.entities.get(&id);
+            }
+            // TODO: get_by_position
+            fn get_by_position(&mut self, x: usize, y: usize) -> Option<&#original_name> {
+                let id_to_find = self.map[(x, y)];
+                if !id_to_find.is_some() {
+                    return None;
+                }
+                return self.entities.get(&id_to_find.unwrap());
+            }
         }
     };
 
