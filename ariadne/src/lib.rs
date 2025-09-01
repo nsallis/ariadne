@@ -29,6 +29,7 @@ pub fn define_as_grid(_attr: TokenStream, item: TokenStream) -> TokenStream {
     if !required_field_found {
         panic!("Struct must contain a field named 'id'");
     }
+    // TODO: similarly, we should check that the id field is an i64
 
     let original_name = input_struct.ident;
     let derived_name = syn::Ident::new(&format!("{}Grid", original_name), original_name.span());
@@ -100,6 +101,56 @@ pub fn define_as_grid(_attr: TokenStream, item: TokenStream) -> TokenStream {
                     return None;
                 }
                 return self.entities.get(&id_to_find.unwrap());
+            }
+
+
+            /*
+            filter closure takes two params:
+            let filtered_map: HashMap<&str, i32> = original_map
+        .iter() // Iterate over key-value pairs by reference
+        .filter(|&(_, &value)| value > 3) // Filter based on the value
+        .map(|(&key, &value)| (key, value)) // Map references back to owned values
+        .collect(); // Collect into a new HashMap
+
+
+             */
+
+            /*
+                here is how to take in a closure:
+                fn apply_operation<F>(value: i32, operation: F) -> i32
+where
+    F: Fn(i32) -> i32, // The closure takes an i32 and returns an i32
+{
+    operation(value)
+}
+
+fn main() {
+    let result = apply_operation(10, |x| x * 2); // Pass a closure that doubles the value
+    println!("Result: {}", result); // Output: Result: 20
+
+    let add_five = |x| x + 5;
+    let another_result = apply_operation(7, add_five); // Pass a named closure
+    println!("Another Result: {}", another_result); // Output: Another Result: 12
+}
+             */
+            // fn find_by_value<F>(&mut self, operation: F) -> ()//Option<#original_name> 
+            // where
+            //     F: Fn(&#original_name) -> bool,
+            // {
+            //     let filtered_items = self.entities.iter().filter(|(&i64, &MyEntity)| {
+            //         return true;//operation(value);
+            //     }).collect();
+            //     println!("filtered items: {:?}", filtered_items);
+            //     return ();
+            // }
+
+            // TODO: just add the closure now...
+            fn find_simple(&mut self) -> Vec<&#original_name> {
+                let mut found: Vec<&#original_name> = vec!();
+                let filtered_items = self.entities.iter().filter(|(_, v)| true).for_each(|(_, v)| {
+                    found.push(v);
+                });
+                return found;
             }
 
         }
