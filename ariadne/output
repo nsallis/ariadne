@@ -1,0 +1,1331 @@
+#![feature(prelude_import)]
+#[prelude_import]
+use std::prelude::rust_2024::*;
+#[macro_use]
+extern crate std;
+extern crate proc_macro;
+use proc_macro::TokenStream;
+use quote::quote;
+use std::{any::TypeId, collections::HashMap};
+use syn::{parse_macro_input, parse_quote, Data, DeriveInput, Fields, ItemStruct};
+use impls::impls;
+#[proc_macro_attribute]
+pub fn define_as_grid(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    let input = item.clone();
+    let original = item.clone();
+    let input_struct = match ::syn::parse::<ItemStruct>(item) {
+        ::syn::__private::Ok(data) => data,
+        ::syn::__private::Err(err) => {
+            return ::syn::__private::TokenStream::from(err.to_compile_error());
+        }
+    };
+    let ast = match ::syn::parse::<DeriveInput>(input) {
+        ::syn::__private::Ok(data) => data,
+        ::syn::__private::Err(err) => {
+            return ::syn::__private::TokenStream::from(err.to_compile_error());
+        }
+    };
+    let original_struct = match ::syn::parse::<DeriveInput>(original) {
+        ::syn::__private::Ok(data) => data,
+        ::syn::__private::Err(err) => {
+            return ::syn::__private::TokenStream::from(err.to_compile_error());
+        }
+    };
+    let struct_data = if let Data::Struct(data_struct) = ast.data {
+        data_struct
+    } else {
+        {
+            ::core::panicking::panic_fmt(
+                format_args!("Ariadne can only be applied to structs"),
+            );
+        };
+    };
+    let fields = if let Fields::Named(fields_named) = struct_data.fields {
+        fields_named.named
+    } else {
+        {
+            ::core::panicking::panic_fmt(
+                format_args!("Ariadne only supports structs with named fields"),
+            );
+        };
+    };
+    let required_field_found = fields
+        .iter()
+        .any(|field| field.ident.as_ref().map_or(false, |ident| ident == "id"));
+    let required_type_found = fields
+        .iter()
+        .any(|field| {
+            field.ty
+                == ::syn::__private::parse_quote({
+                    let mut _s = ::quote::__private::TokenStream::new();
+                    ::quote::__private::push_ident(&mut _s, "i64");
+                    _s
+                })
+        });
+    if !required_field_found || !required_type_found {
+        {
+            ::core::panicking::panic_fmt(
+                format_args!("Struct must contain a field named \'id\' of type i64"),
+            );
+        };
+    }
+    if !{
+        /// Fallback trait with `False` for `IMPLS` if the type does not
+        /// implement the given trait.
+        trait DoesNotImpl {
+            const IMPLS: bool = false;
+        }
+        impl<T: ?Sized> DoesNotImpl for T {}
+        /// Concrete type with `True` for `IMPLS` if the type implements the
+        /// given trait. Otherwise, it falls back to `DoesNotImpl`.
+        struct Wrapper<T: ?Sized>(::impls::_core::marker::PhantomData<T>);
+        #[allow(dead_code)]
+        impl<T: ?Sized + Clone> Wrapper<T> {
+            const IMPLS: bool = true;
+        }
+        <Wrapper<()>>::IMPLS
+    } {
+        {
+            ::core::panicking::panic_fmt(format_args!("Struct must implement Clone"));
+        };
+    }
+    let original_name = input_struct.ident;
+    let derived_name = syn::Ident::new(
+        &::alloc::__export::must_use({
+            let res = ::alloc::fmt::format(format_args!("{0}Grid", original_name));
+            res
+        }),
+        original_name.span(),
+    );
+    let exp = {
+        let mut _s = ::quote::__private::TokenStream::new();
+        ::quote::ToTokens::to_tokens(&original_struct, &mut _s);
+        ::quote::__private::push_ident(&mut _s, "pub");
+        ::quote::__private::push_ident(&mut _s, "struct");
+        ::quote::ToTokens::to_tokens(&derived_name, &mut _s);
+        ::quote::__private::push_group(
+            &mut _s,
+            ::quote::__private::Delimiter::Brace,
+            {
+                let mut _s = ::quote::__private::TokenStream::new();
+                ::quote::__private::push_ident(&mut _s, "pub");
+                ::quote::__private::push_ident(&mut _s, "entities");
+                ::quote::__private::push_colon(&mut _s);
+                ::quote::__private::push_ident(&mut _s, "HashMap");
+                ::quote::__private::push_lt(&mut _s);
+                ::quote::__private::push_ident(&mut _s, "i64");
+                ::quote::__private::push_comma(&mut _s);
+                ::quote::ToTokens::to_tokens(&original_name, &mut _s);
+                ::quote::__private::push_gt(&mut _s);
+                ::quote::__private::push_comma(&mut _s);
+                ::quote::__private::push_ident(&mut _s, "pub");
+                ::quote::__private::push_ident(&mut _s, "map");
+                ::quote::__private::push_colon(&mut _s);
+                ::quote::__private::push_ident(&mut _s, "Array2D");
+                ::quote::__private::push_lt(&mut _s);
+                ::quote::__private::push_ident(&mut _s, "Option");
+                ::quote::__private::push_lt(&mut _s);
+                ::quote::__private::push_ident(&mut _s, "i64");
+                ::quote::__private::push_shr(&mut _s);
+                _s
+            },
+        );
+        ::quote::__private::push_ident(&mut _s, "impl");
+        ::quote::ToTokens::to_tokens(&derived_name, &mut _s);
+        ::quote::__private::push_group(
+            &mut _s,
+            ::quote::__private::Delimiter::Brace,
+            {
+                let mut _s = ::quote::__private::TokenStream::new();
+                ::quote::__private::push_ident(&mut _s, "fn");
+                ::quote::__private::push_ident(&mut _s, "new");
+                ::quote::__private::push_group(
+                    &mut _s,
+                    ::quote::__private::Delimiter::Parenthesis,
+                    {
+                        let mut _s = ::quote::__private::TokenStream::new();
+                        ::quote::__private::push_ident(&mut _s, "width");
+                        ::quote::__private::push_colon(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "usize");
+                        ::quote::__private::push_comma(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "height");
+                        ::quote::__private::push_colon(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "usize");
+                        _s
+                    },
+                );
+                ::quote::__private::push_rarrow(&mut _s);
+                ::quote::__private::push_ident(&mut _s, "Self");
+                ::quote::__private::push_group(
+                    &mut _s,
+                    ::quote::__private::Delimiter::Brace,
+                    {
+                        let mut _s = ::quote::__private::TokenStream::new();
+                        ::quote::__private::push_ident(&mut _s, "return");
+                        ::quote::ToTokens::to_tokens(&derived_name, &mut _s);
+                        ::quote::__private::push_group(
+                            &mut _s,
+                            ::quote::__private::Delimiter::Brace,
+                            {
+                                let mut _s = ::quote::__private::TokenStream::new();
+                                ::quote::__private::push_ident(&mut _s, "entities");
+                                ::quote::__private::push_colon(&mut _s);
+                                ::quote::__private::push_ident(&mut _s, "HashMap");
+                                ::quote::__private::push_colon2(&mut _s);
+                                ::quote::__private::push_ident(&mut _s, "new");
+                                ::quote::__private::push_group(
+                                    &mut _s,
+                                    ::quote::__private::Delimiter::Parenthesis,
+                                    ::quote::__private::TokenStream::new(),
+                                );
+                                ::quote::__private::push_comma(&mut _s);
+                                ::quote::__private::push_ident(&mut _s, "map");
+                                ::quote::__private::push_colon(&mut _s);
+                                ::quote::__private::push_ident(&mut _s, "Array2D");
+                                ::quote::__private::push_colon2(&mut _s);
+                                ::quote::__private::push_ident(&mut _s, "filled_with");
+                                ::quote::__private::push_group(
+                                    &mut _s,
+                                    ::quote::__private::Delimiter::Parenthesis,
+                                    {
+                                        let mut _s = ::quote::__private::TokenStream::new();
+                                        ::quote::__private::push_ident(&mut _s, "None");
+                                        ::quote::__private::push_comma(&mut _s);
+                                        ::quote::__private::push_ident(&mut _s, "width");
+                                        ::quote::__private::push_comma(&mut _s);
+                                        ::quote::__private::push_ident(&mut _s, "height");
+                                        _s
+                                    },
+                                );
+                                _s
+                            },
+                        );
+                        _s
+                    },
+                );
+                ::quote::__private::push_ident(&mut _s, "fn");
+                ::quote::__private::push_ident(&mut _s, "add");
+                ::quote::__private::push_group(
+                    &mut _s,
+                    ::quote::__private::Delimiter::Parenthesis,
+                    {
+                        let mut _s = ::quote::__private::TokenStream::new();
+                        ::quote::__private::push_and(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "mut");
+                        ::quote::__private::push_ident(&mut _s, "self");
+                        ::quote::__private::push_comma(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "entity");
+                        ::quote::__private::push_colon(&mut _s);
+                        ::quote::__private::push_and(&mut _s);
+                        ::quote::ToTokens::to_tokens(&original_name, &mut _s);
+                        ::quote::__private::push_comma(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "x");
+                        ::quote::__private::push_colon(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "usize");
+                        ::quote::__private::push_comma(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "y");
+                        ::quote::__private::push_colon(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "usize");
+                        _s
+                    },
+                );
+                ::quote::__private::push_group(
+                    &mut _s,
+                    ::quote::__private::Delimiter::Brace,
+                    {
+                        let mut _s = ::quote::__private::TokenStream::new();
+                        ::quote::__private::push_ident(&mut _s, "self");
+                        ::quote::__private::push_dot(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "entities");
+                        ::quote::__private::push_dot(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "insert");
+                        ::quote::__private::push_group(
+                            &mut _s,
+                            ::quote::__private::Delimiter::Parenthesis,
+                            {
+                                let mut _s = ::quote::__private::TokenStream::new();
+                                ::quote::__private::push_ident(&mut _s, "entity");
+                                ::quote::__private::push_dot(&mut _s);
+                                ::quote::__private::push_ident(&mut _s, "id");
+                                ::quote::__private::push_comma(&mut _s);
+                                ::quote::__private::push_ident(&mut _s, "entity");
+                                ::quote::__private::push_dot(&mut _s);
+                                ::quote::__private::push_ident(&mut _s, "clone");
+                                ::quote::__private::push_group(
+                                    &mut _s,
+                                    ::quote::__private::Delimiter::Parenthesis,
+                                    ::quote::__private::TokenStream::new(),
+                                );
+                                _s
+                            },
+                        );
+                        ::quote::__private::push_semi(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "self");
+                        ::quote::__private::push_dot(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "map");
+                        ::quote::__private::push_group(
+                            &mut _s,
+                            ::quote::__private::Delimiter::Bracket,
+                            {
+                                let mut _s = ::quote::__private::TokenStream::new();
+                                ::quote::__private::push_group(
+                                    &mut _s,
+                                    ::quote::__private::Delimiter::Parenthesis,
+                                    {
+                                        let mut _s = ::quote::__private::TokenStream::new();
+                                        ::quote::__private::push_ident(&mut _s, "x");
+                                        ::quote::__private::push_comma(&mut _s);
+                                        ::quote::__private::push_ident(&mut _s, "y");
+                                        _s
+                                    },
+                                );
+                                _s
+                            },
+                        );
+                        ::quote::__private::push_eq(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "Some");
+                        ::quote::__private::push_group(
+                            &mut _s,
+                            ::quote::__private::Delimiter::Parenthesis,
+                            {
+                                let mut _s = ::quote::__private::TokenStream::new();
+                                ::quote::__private::push_ident(&mut _s, "entity");
+                                ::quote::__private::push_dot(&mut _s);
+                                ::quote::__private::push_ident(&mut _s, "id");
+                                _s
+                            },
+                        );
+                        ::quote::__private::push_semi(&mut _s);
+                        _s
+                    },
+                );
+                ::quote::__private::push_ident(&mut _s, "fn");
+                ::quote::__private::push_ident(&mut _s, "update_by_id");
+                ::quote::__private::push_lt(&mut _s);
+                ::quote::__private::push_ident(&mut _s, "F");
+                ::quote::__private::push_gt(&mut _s);
+                ::quote::__private::push_group(
+                    &mut _s,
+                    ::quote::__private::Delimiter::Parenthesis,
+                    {
+                        let mut _s = ::quote::__private::TokenStream::new();
+                        ::quote::__private::push_and(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "mut");
+                        ::quote::__private::push_ident(&mut _s, "self");
+                        ::quote::__private::push_comma(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "id");
+                        ::quote::__private::push_colon(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "i64");
+                        ::quote::__private::push_comma(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "updater");
+                        ::quote::__private::push_colon(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "F");
+                        _s
+                    },
+                );
+                ::quote::__private::push_ident(&mut _s, "where");
+                ::quote::__private::push_ident(&mut _s, "F");
+                ::quote::__private::push_colon(&mut _s);
+                ::quote::__private::push_ident(&mut _s, "Fn");
+                ::quote::__private::push_group(
+                    &mut _s,
+                    ::quote::__private::Delimiter::Parenthesis,
+                    {
+                        let mut _s = ::quote::__private::TokenStream::new();
+                        ::quote::__private::push_and(&mut _s);
+                        ::quote::ToTokens::to_tokens(&original_name, &mut _s);
+                        _s
+                    },
+                );
+                ::quote::__private::push_rarrow(&mut _s);
+                ::quote::ToTokens::to_tokens(&original_name, &mut _s);
+                ::quote::__private::push_group(
+                    &mut _s,
+                    ::quote::__private::Delimiter::Brace,
+                    {
+                        let mut _s = ::quote::__private::TokenStream::new();
+                        ::quote::__private::push_ident(&mut _s, "let");
+                        ::quote::__private::push_ident(&mut _s, "current_entity");
+                        ::quote::__private::push_eq(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "self");
+                        ::quote::__private::push_dot(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "entities");
+                        ::quote::__private::push_dot(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "get");
+                        ::quote::__private::push_group(
+                            &mut _s,
+                            ::quote::__private::Delimiter::Parenthesis,
+                            {
+                                let mut _s = ::quote::__private::TokenStream::new();
+                                ::quote::__private::push_and(&mut _s);
+                                ::quote::__private::push_ident(&mut _s, "id");
+                                _s
+                            },
+                        );
+                        ::quote::__private::push_semi(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "if");
+                        ::quote::__private::push_bang(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "current_entity");
+                        ::quote::__private::push_dot(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "is_some");
+                        ::quote::__private::push_group(
+                            &mut _s,
+                            ::quote::__private::Delimiter::Parenthesis,
+                            ::quote::__private::TokenStream::new(),
+                        );
+                        ::quote::__private::push_group(
+                            &mut _s,
+                            ::quote::__private::Delimiter::Brace,
+                            {
+                                let mut _s = ::quote::__private::TokenStream::new();
+                                ::quote::__private::push_ident(&mut _s, "return");
+                                ::quote::__private::push_semi(&mut _s);
+                                _s
+                            },
+                        );
+                        ::quote::__private::push_ident(&mut _s, "let");
+                        ::quote::__private::push_ident(&mut _s, "updated");
+                        ::quote::__private::push_eq(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "updater");
+                        ::quote::__private::push_group(
+                            &mut _s,
+                            ::quote::__private::Delimiter::Parenthesis,
+                            {
+                                let mut _s = ::quote::__private::TokenStream::new();
+                                ::quote::__private::push_ident(&mut _s, "current_entity");
+                                ::quote::__private::push_dot(&mut _s);
+                                ::quote::__private::push_ident(&mut _s, "unwrap");
+                                ::quote::__private::push_group(
+                                    &mut _s,
+                                    ::quote::__private::Delimiter::Parenthesis,
+                                    ::quote::__private::TokenStream::new(),
+                                );
+                                _s
+                            },
+                        );
+                        ::quote::__private::push_semi(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "self");
+                        ::quote::__private::push_dot(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "entities");
+                        ::quote::__private::push_dot(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "insert");
+                        ::quote::__private::push_group(
+                            &mut _s,
+                            ::quote::__private::Delimiter::Parenthesis,
+                            {
+                                let mut _s = ::quote::__private::TokenStream::new();
+                                ::quote::__private::push_ident(&mut _s, "id");
+                                ::quote::__private::push_comma(&mut _s);
+                                ::quote::__private::push_ident(&mut _s, "updated");
+                                _s
+                            },
+                        );
+                        ::quote::__private::push_semi(&mut _s);
+                        _s
+                    },
+                );
+                ::quote::__private::push_ident(&mut _s, "fn");
+                ::quote::__private::push_ident(&mut _s, "update_by_position");
+                ::quote::__private::push_lt(&mut _s);
+                ::quote::__private::push_ident(&mut _s, "F");
+                ::quote::__private::push_gt(&mut _s);
+                ::quote::__private::push_group(
+                    &mut _s,
+                    ::quote::__private::Delimiter::Parenthesis,
+                    {
+                        let mut _s = ::quote::__private::TokenStream::new();
+                        ::quote::__private::push_and(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "mut");
+                        ::quote::__private::push_ident(&mut _s, "self");
+                        ::quote::__private::push_comma(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "x");
+                        ::quote::__private::push_colon(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "usize");
+                        ::quote::__private::push_comma(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "y");
+                        ::quote::__private::push_colon(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "usize");
+                        ::quote::__private::push_comma(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "updater");
+                        ::quote::__private::push_colon(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "F");
+                        _s
+                    },
+                );
+                ::quote::__private::push_ident(&mut _s, "where");
+                ::quote::__private::push_ident(&mut _s, "F");
+                ::quote::__private::push_colon(&mut _s);
+                ::quote::__private::push_ident(&mut _s, "Fn");
+                ::quote::__private::push_group(
+                    &mut _s,
+                    ::quote::__private::Delimiter::Parenthesis,
+                    {
+                        let mut _s = ::quote::__private::TokenStream::new();
+                        ::quote::__private::push_and(&mut _s);
+                        ::quote::ToTokens::to_tokens(&original_name, &mut _s);
+                        _s
+                    },
+                );
+                ::quote::__private::push_rarrow(&mut _s);
+                ::quote::ToTokens::to_tokens(&original_name, &mut _s);
+                ::quote::__private::push_group(
+                    &mut _s,
+                    ::quote::__private::Delimiter::Brace,
+                    {
+                        let mut _s = ::quote::__private::TokenStream::new();
+                        ::quote::__private::push_ident(&mut _s, "let");
+                        ::quote::__private::push_ident(&mut _s, "id_to_use");
+                        ::quote::__private::push_eq(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "self");
+                        ::quote::__private::push_dot(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "map");
+                        ::quote::__private::push_group(
+                            &mut _s,
+                            ::quote::__private::Delimiter::Bracket,
+                            {
+                                let mut _s = ::quote::__private::TokenStream::new();
+                                ::quote::__private::push_group(
+                                    &mut _s,
+                                    ::quote::__private::Delimiter::Parenthesis,
+                                    {
+                                        let mut _s = ::quote::__private::TokenStream::new();
+                                        ::quote::__private::push_ident(&mut _s, "x");
+                                        ::quote::__private::push_comma(&mut _s);
+                                        ::quote::__private::push_ident(&mut _s, "y");
+                                        _s
+                                    },
+                                );
+                                _s
+                            },
+                        );
+                        ::quote::__private::push_semi(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "if");
+                        ::quote::__private::push_bang(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "id_to_use");
+                        ::quote::__private::push_dot(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "is_some");
+                        ::quote::__private::push_group(
+                            &mut _s,
+                            ::quote::__private::Delimiter::Parenthesis,
+                            ::quote::__private::TokenStream::new(),
+                        );
+                        ::quote::__private::push_group(
+                            &mut _s,
+                            ::quote::__private::Delimiter::Brace,
+                            {
+                                let mut _s = ::quote::__private::TokenStream::new();
+                                ::quote::__private::push_ident(&mut _s, "return");
+                                ::quote::__private::push_semi(&mut _s);
+                                _s
+                            },
+                        );
+                        ::quote::__private::push_ident(&mut _s, "let");
+                        ::quote::__private::push_ident(&mut _s, "current_entity");
+                        ::quote::__private::push_eq(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "self");
+                        ::quote::__private::push_dot(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "entities");
+                        ::quote::__private::push_dot(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "get");
+                        ::quote::__private::push_group(
+                            &mut _s,
+                            ::quote::__private::Delimiter::Parenthesis,
+                            {
+                                let mut _s = ::quote::__private::TokenStream::new();
+                                ::quote::__private::push_and(&mut _s);
+                                ::quote::__private::push_ident(&mut _s, "id_to_use");
+                                ::quote::__private::push_dot(&mut _s);
+                                ::quote::__private::push_ident(&mut _s, "unwrap");
+                                ::quote::__private::push_group(
+                                    &mut _s,
+                                    ::quote::__private::Delimiter::Parenthesis,
+                                    ::quote::__private::TokenStream::new(),
+                                );
+                                _s
+                            },
+                        );
+                        ::quote::__private::push_semi(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "if");
+                        ::quote::__private::push_bang(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "current_entity");
+                        ::quote::__private::push_dot(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "is_some");
+                        ::quote::__private::push_group(
+                            &mut _s,
+                            ::quote::__private::Delimiter::Parenthesis,
+                            ::quote::__private::TokenStream::new(),
+                        );
+                        ::quote::__private::push_group(
+                            &mut _s,
+                            ::quote::__private::Delimiter::Brace,
+                            {
+                                let mut _s = ::quote::__private::TokenStream::new();
+                                ::quote::__private::push_ident(&mut _s, "return");
+                                ::quote::__private::push_semi(&mut _s);
+                                _s
+                            },
+                        );
+                        ::quote::__private::push_ident(&mut _s, "let");
+                        ::quote::__private::push_ident(&mut _s, "updated");
+                        ::quote::__private::push_eq(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "updater");
+                        ::quote::__private::push_group(
+                            &mut _s,
+                            ::quote::__private::Delimiter::Parenthesis,
+                            {
+                                let mut _s = ::quote::__private::TokenStream::new();
+                                ::quote::__private::push_ident(&mut _s, "current_entity");
+                                ::quote::__private::push_dot(&mut _s);
+                                ::quote::__private::push_ident(&mut _s, "unwrap");
+                                ::quote::__private::push_group(
+                                    &mut _s,
+                                    ::quote::__private::Delimiter::Parenthesis,
+                                    ::quote::__private::TokenStream::new(),
+                                );
+                                _s
+                            },
+                        );
+                        ::quote::__private::push_semi(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "self");
+                        ::quote::__private::push_dot(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "entities");
+                        ::quote::__private::push_dot(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "insert");
+                        ::quote::__private::push_group(
+                            &mut _s,
+                            ::quote::__private::Delimiter::Parenthesis,
+                            {
+                                let mut _s = ::quote::__private::TokenStream::new();
+                                ::quote::__private::push_ident(&mut _s, "id_to_use");
+                                ::quote::__private::push_dot(&mut _s);
+                                ::quote::__private::push_ident(&mut _s, "unwrap");
+                                ::quote::__private::push_group(
+                                    &mut _s,
+                                    ::quote::__private::Delimiter::Parenthesis,
+                                    ::quote::__private::TokenStream::new(),
+                                );
+                                ::quote::__private::push_comma(&mut _s);
+                                ::quote::__private::push_ident(&mut _s, "updated");
+                                _s
+                            },
+                        );
+                        ::quote::__private::push_semi(&mut _s);
+                        _s
+                    },
+                );
+                ::quote::__private::push_ident(&mut _s, "fn");
+                ::quote::__private::push_ident(&mut _s, "remove_by_id");
+                ::quote::__private::push_group(
+                    &mut _s,
+                    ::quote::__private::Delimiter::Parenthesis,
+                    {
+                        let mut _s = ::quote::__private::TokenStream::new();
+                        ::quote::__private::push_and(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "mut");
+                        ::quote::__private::push_ident(&mut _s, "self");
+                        ::quote::__private::push_comma(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "id");
+                        ::quote::__private::push_colon(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "i64");
+                        _s
+                    },
+                );
+                ::quote::__private::push_group(
+                    &mut _s,
+                    ::quote::__private::Delimiter::Brace,
+                    {
+                        let mut _s = ::quote::__private::TokenStream::new();
+                        ::quote::__private::push_ident(&mut _s, "self");
+                        ::quote::__private::push_dot(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "entities");
+                        ::quote::__private::push_dot(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "remove");
+                        ::quote::__private::push_group(
+                            &mut _s,
+                            ::quote::__private::Delimiter::Parenthesis,
+                            {
+                                let mut _s = ::quote::__private::TokenStream::new();
+                                ::quote::__private::push_and(&mut _s);
+                                ::quote::__private::push_ident(&mut _s, "id");
+                                _s
+                            },
+                        );
+                        ::quote::__private::push_semi(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "let");
+                        ::quote::__private::push_ident(&mut _s, "mut");
+                        ::quote::__private::push_ident(&mut _s, "remove_x");
+                        ::quote::__private::push_colon(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "Option");
+                        ::quote::__private::push_lt(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "usize");
+                        ::quote::__private::push_gt(&mut _s);
+                        ::quote::__private::push_eq(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "None");
+                        ::quote::__private::push_semi(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "let");
+                        ::quote::__private::push_ident(&mut _s, "mut");
+                        ::quote::__private::push_ident(&mut _s, "remove_y");
+                        ::quote::__private::push_colon(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "Option");
+                        ::quote::__private::push_lt(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "usize");
+                        ::quote::__private::push_gt(&mut _s);
+                        ::quote::__private::push_eq(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "None");
+                        ::quote::__private::push_semi(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "for");
+                        ::quote::__private::push_group(
+                            &mut _s,
+                            ::quote::__private::Delimiter::Parenthesis,
+                            {
+                                let mut _s = ::quote::__private::TokenStream::new();
+                                ::quote::__private::push_ident(&mut _s, "idx");
+                                ::quote::__private::push_comma(&mut _s);
+                                ::quote::__private::push_ident(&mut _s, "row_iter");
+                                _s
+                            },
+                        );
+                        ::quote::__private::push_ident(&mut _s, "in");
+                        ::quote::__private::push_ident(&mut _s, "self");
+                        ::quote::__private::push_dot(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "map");
+                        ::quote::__private::push_dot(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "rows_iter");
+                        ::quote::__private::push_group(
+                            &mut _s,
+                            ::quote::__private::Delimiter::Parenthesis,
+                            ::quote::__private::TokenStream::new(),
+                        );
+                        ::quote::__private::push_dot(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "enumerate");
+                        ::quote::__private::push_group(
+                            &mut _s,
+                            ::quote::__private::Delimiter::Parenthesis,
+                            ::quote::__private::TokenStream::new(),
+                        );
+                        ::quote::__private::push_group(
+                            &mut _s,
+                            ::quote::__private::Delimiter::Brace,
+                            {
+                                let mut _s = ::quote::__private::TokenStream::new();
+                                ::quote::__private::push_ident(&mut _s, "for");
+                                ::quote::__private::push_group(
+                                    &mut _s,
+                                    ::quote::__private::Delimiter::Parenthesis,
+                                    {
+                                        let mut _s = ::quote::__private::TokenStream::new();
+                                        ::quote::__private::push_ident(&mut _s, "idy");
+                                        ::quote::__private::push_comma(&mut _s);
+                                        ::quote::__private::push_ident(&mut _s, "id_in_map");
+                                        _s
+                                    },
+                                );
+                                ::quote::__private::push_ident(&mut _s, "in");
+                                ::quote::__private::push_ident(&mut _s, "row_iter");
+                                ::quote::__private::push_dot(&mut _s);
+                                ::quote::__private::push_ident(&mut _s, "enumerate");
+                                ::quote::__private::push_group(
+                                    &mut _s,
+                                    ::quote::__private::Delimiter::Parenthesis,
+                                    ::quote::__private::TokenStream::new(),
+                                );
+                                ::quote::__private::push_group(
+                                    &mut _s,
+                                    ::quote::__private::Delimiter::Brace,
+                                    {
+                                        let mut _s = ::quote::__private::TokenStream::new();
+                                        ::quote::__private::push_ident(&mut _s, "if");
+                                        ::quote::__private::push_bang(&mut _s);
+                                        ::quote::__private::push_ident(&mut _s, "id_in_map");
+                                        ::quote::__private::push_dot(&mut _s);
+                                        ::quote::__private::push_ident(&mut _s, "is_some");
+                                        ::quote::__private::push_group(
+                                            &mut _s,
+                                            ::quote::__private::Delimiter::Parenthesis,
+                                            ::quote::__private::TokenStream::new(),
+                                        );
+                                        ::quote::__private::push_group(
+                                            &mut _s,
+                                            ::quote::__private::Delimiter::Brace,
+                                            {
+                                                let mut _s = ::quote::__private::TokenStream::new();
+                                                ::quote::__private::push_ident(&mut _s, "continue");
+                                                ::quote::__private::push_semi(&mut _s);
+                                                _s
+                                            },
+                                        );
+                                        ::quote::__private::push_ident(&mut _s, "if");
+                                        ::quote::__private::push_ident(&mut _s, "id_in_map");
+                                        ::quote::__private::push_dot(&mut _s);
+                                        ::quote::__private::push_ident(&mut _s, "unwrap");
+                                        ::quote::__private::push_group(
+                                            &mut _s,
+                                            ::quote::__private::Delimiter::Parenthesis,
+                                            ::quote::__private::TokenStream::new(),
+                                        );
+                                        ::quote::__private::push_eq_eq(&mut _s);
+                                        ::quote::__private::push_ident(&mut _s, "id");
+                                        ::quote::__private::push_group(
+                                            &mut _s,
+                                            ::quote::__private::Delimiter::Brace,
+                                            {
+                                                let mut _s = ::quote::__private::TokenStream::new();
+                                                ::quote::__private::push_ident(&mut _s, "remove_x");
+                                                ::quote::__private::push_eq(&mut _s);
+                                                ::quote::__private::push_ident(&mut _s, "Some");
+                                                ::quote::__private::push_group(
+                                                    &mut _s,
+                                                    ::quote::__private::Delimiter::Parenthesis,
+                                                    {
+                                                        let mut _s = ::quote::__private::TokenStream::new();
+                                                        ::quote::__private::push_ident(&mut _s, "idx");
+                                                        _s
+                                                    },
+                                                );
+                                                ::quote::__private::push_semi(&mut _s);
+                                                ::quote::__private::push_ident(&mut _s, "remove_y");
+                                                ::quote::__private::push_eq(&mut _s);
+                                                ::quote::__private::push_ident(&mut _s, "Some");
+                                                ::quote::__private::push_group(
+                                                    &mut _s,
+                                                    ::quote::__private::Delimiter::Parenthesis,
+                                                    {
+                                                        let mut _s = ::quote::__private::TokenStream::new();
+                                                        ::quote::__private::push_ident(&mut _s, "idy");
+                                                        _s
+                                                    },
+                                                );
+                                                ::quote::__private::push_semi(&mut _s);
+                                                _s
+                                            },
+                                        );
+                                        _s
+                                    },
+                                );
+                                _s
+                            },
+                        );
+                        ::quote::__private::push_ident(&mut _s, "if");
+                        ::quote::__private::push_ident(&mut _s, "remove_x");
+                        ::quote::__private::push_dot(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "is_some");
+                        ::quote::__private::push_group(
+                            &mut _s,
+                            ::quote::__private::Delimiter::Parenthesis,
+                            ::quote::__private::TokenStream::new(),
+                        );
+                        ::quote::__private::push_and_and(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "remove_y");
+                        ::quote::__private::push_dot(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "is_some");
+                        ::quote::__private::push_group(
+                            &mut _s,
+                            ::quote::__private::Delimiter::Parenthesis,
+                            ::quote::__private::TokenStream::new(),
+                        );
+                        ::quote::__private::push_group(
+                            &mut _s,
+                            ::quote::__private::Delimiter::Brace,
+                            {
+                                let mut _s = ::quote::__private::TokenStream::new();
+                                ::quote::__private::push_ident(&mut _s, "self");
+                                ::quote::__private::push_dot(&mut _s);
+                                ::quote::__private::push_ident(&mut _s, "map");
+                                ::quote::__private::push_group(
+                                    &mut _s,
+                                    ::quote::__private::Delimiter::Bracket,
+                                    {
+                                        let mut _s = ::quote::__private::TokenStream::new();
+                                        ::quote::__private::push_group(
+                                            &mut _s,
+                                            ::quote::__private::Delimiter::Parenthesis,
+                                            {
+                                                let mut _s = ::quote::__private::TokenStream::new();
+                                                ::quote::__private::push_ident(&mut _s, "remove_x");
+                                                ::quote::__private::push_dot(&mut _s);
+                                                ::quote::__private::push_ident(&mut _s, "unwrap");
+                                                ::quote::__private::push_group(
+                                                    &mut _s,
+                                                    ::quote::__private::Delimiter::Parenthesis,
+                                                    ::quote::__private::TokenStream::new(),
+                                                );
+                                                ::quote::__private::push_comma(&mut _s);
+                                                ::quote::__private::push_ident(&mut _s, "remove_y");
+                                                ::quote::__private::push_dot(&mut _s);
+                                                ::quote::__private::push_ident(&mut _s, "unwrap");
+                                                ::quote::__private::push_group(
+                                                    &mut _s,
+                                                    ::quote::__private::Delimiter::Parenthesis,
+                                                    ::quote::__private::TokenStream::new(),
+                                                );
+                                                _s
+                                            },
+                                        );
+                                        _s
+                                    },
+                                );
+                                ::quote::__private::push_eq(&mut _s);
+                                ::quote::__private::push_ident(&mut _s, "None");
+                                ::quote::__private::push_semi(&mut _s);
+                                _s
+                            },
+                        );
+                        _s
+                    },
+                );
+                ::quote::__private::push_ident(&mut _s, "fn");
+                ::quote::__private::push_ident(&mut _s, "remove_by_position");
+                ::quote::__private::push_group(
+                    &mut _s,
+                    ::quote::__private::Delimiter::Parenthesis,
+                    {
+                        let mut _s = ::quote::__private::TokenStream::new();
+                        ::quote::__private::push_and(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "mut");
+                        ::quote::__private::push_ident(&mut _s, "self");
+                        ::quote::__private::push_comma(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "x");
+                        ::quote::__private::push_colon(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "usize");
+                        ::quote::__private::push_comma(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "y");
+                        ::quote::__private::push_colon(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "usize");
+                        _s
+                    },
+                );
+                ::quote::__private::push_group(
+                    &mut _s,
+                    ::quote::__private::Delimiter::Brace,
+                    {
+                        let mut _s = ::quote::__private::TokenStream::new();
+                        ::quote::__private::push_ident(&mut _s, "let");
+                        ::quote::__private::push_ident(&mut _s, "id_to_remove");
+                        ::quote::__private::push_eq(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "self");
+                        ::quote::__private::push_dot(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "map");
+                        ::quote::__private::push_group(
+                            &mut _s,
+                            ::quote::__private::Delimiter::Bracket,
+                            {
+                                let mut _s = ::quote::__private::TokenStream::new();
+                                ::quote::__private::push_group(
+                                    &mut _s,
+                                    ::quote::__private::Delimiter::Parenthesis,
+                                    {
+                                        let mut _s = ::quote::__private::TokenStream::new();
+                                        ::quote::__private::push_ident(&mut _s, "x");
+                                        ::quote::__private::push_comma(&mut _s);
+                                        ::quote::__private::push_ident(&mut _s, "y");
+                                        _s
+                                    },
+                                );
+                                _s
+                            },
+                        );
+                        ::quote::__private::push_semi(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "if");
+                        ::quote::__private::push_bang(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "id_to_remove");
+                        ::quote::__private::push_dot(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "is_some");
+                        ::quote::__private::push_group(
+                            &mut _s,
+                            ::quote::__private::Delimiter::Parenthesis,
+                            ::quote::__private::TokenStream::new(),
+                        );
+                        ::quote::__private::push_group(
+                            &mut _s,
+                            ::quote::__private::Delimiter::Brace,
+                            {
+                                let mut _s = ::quote::__private::TokenStream::new();
+                                ::quote::__private::push_ident(&mut _s, "return");
+                                ::quote::__private::push_semi(&mut _s);
+                                _s
+                            },
+                        );
+                        ::quote::__private::push_ident(&mut _s, "self");
+                        ::quote::__private::push_dot(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "entities");
+                        ::quote::__private::push_dot(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "remove");
+                        ::quote::__private::push_group(
+                            &mut _s,
+                            ::quote::__private::Delimiter::Parenthesis,
+                            {
+                                let mut _s = ::quote::__private::TokenStream::new();
+                                ::quote::__private::push_and(&mut _s);
+                                ::quote::__private::push_ident(&mut _s, "id_to_remove");
+                                ::quote::__private::push_dot(&mut _s);
+                                ::quote::__private::push_ident(&mut _s, "unwrap");
+                                ::quote::__private::push_group(
+                                    &mut _s,
+                                    ::quote::__private::Delimiter::Parenthesis,
+                                    ::quote::__private::TokenStream::new(),
+                                );
+                                _s
+                            },
+                        );
+                        ::quote::__private::push_semi(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "self");
+                        ::quote::__private::push_dot(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "map");
+                        ::quote::__private::push_group(
+                            &mut _s,
+                            ::quote::__private::Delimiter::Bracket,
+                            {
+                                let mut _s = ::quote::__private::TokenStream::new();
+                                ::quote::__private::push_group(
+                                    &mut _s,
+                                    ::quote::__private::Delimiter::Parenthesis,
+                                    {
+                                        let mut _s = ::quote::__private::TokenStream::new();
+                                        ::quote::__private::push_ident(&mut _s, "x");
+                                        ::quote::__private::push_comma(&mut _s);
+                                        ::quote::__private::push_ident(&mut _s, "y");
+                                        _s
+                                    },
+                                );
+                                _s
+                            },
+                        );
+                        ::quote::__private::push_eq(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "None");
+                        ::quote::__private::push_semi(&mut _s);
+                        _s
+                    },
+                );
+                ::quote::__private::push_ident(&mut _s, "fn");
+                ::quote::__private::push_ident(&mut _s, "get_by_id");
+                ::quote::__private::push_group(
+                    &mut _s,
+                    ::quote::__private::Delimiter::Parenthesis,
+                    {
+                        let mut _s = ::quote::__private::TokenStream::new();
+                        ::quote::__private::push_and(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "mut");
+                        ::quote::__private::push_ident(&mut _s, "self");
+                        ::quote::__private::push_comma(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "id");
+                        ::quote::__private::push_colon(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "i64");
+                        _s
+                    },
+                );
+                ::quote::__private::push_rarrow(&mut _s);
+                ::quote::__private::push_ident(&mut _s, "Option");
+                ::quote::__private::push_lt(&mut _s);
+                ::quote::__private::push_and(&mut _s);
+                ::quote::ToTokens::to_tokens(&original_name, &mut _s);
+                ::quote::__private::push_gt(&mut _s);
+                ::quote::__private::push_group(
+                    &mut _s,
+                    ::quote::__private::Delimiter::Brace,
+                    {
+                        let mut _s = ::quote::__private::TokenStream::new();
+                        ::quote::__private::push_ident(&mut _s, "return");
+                        ::quote::__private::push_ident(&mut _s, "self");
+                        ::quote::__private::push_dot(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "entities");
+                        ::quote::__private::push_dot(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "get");
+                        ::quote::__private::push_group(
+                            &mut _s,
+                            ::quote::__private::Delimiter::Parenthesis,
+                            {
+                                let mut _s = ::quote::__private::TokenStream::new();
+                                ::quote::__private::push_and(&mut _s);
+                                ::quote::__private::push_ident(&mut _s, "id");
+                                _s
+                            },
+                        );
+                        ::quote::__private::push_semi(&mut _s);
+                        _s
+                    },
+                );
+                ::quote::__private::push_ident(&mut _s, "fn");
+                ::quote::__private::push_ident(&mut _s, "get_by_position");
+                ::quote::__private::push_group(
+                    &mut _s,
+                    ::quote::__private::Delimiter::Parenthesis,
+                    {
+                        let mut _s = ::quote::__private::TokenStream::new();
+                        ::quote::__private::push_and(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "mut");
+                        ::quote::__private::push_ident(&mut _s, "self");
+                        ::quote::__private::push_comma(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "x");
+                        ::quote::__private::push_colon(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "usize");
+                        ::quote::__private::push_comma(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "y");
+                        ::quote::__private::push_colon(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "usize");
+                        _s
+                    },
+                );
+                ::quote::__private::push_rarrow(&mut _s);
+                ::quote::__private::push_ident(&mut _s, "Option");
+                ::quote::__private::push_lt(&mut _s);
+                ::quote::__private::push_and(&mut _s);
+                ::quote::ToTokens::to_tokens(&original_name, &mut _s);
+                ::quote::__private::push_gt(&mut _s);
+                ::quote::__private::push_group(
+                    &mut _s,
+                    ::quote::__private::Delimiter::Brace,
+                    {
+                        let mut _s = ::quote::__private::TokenStream::new();
+                        ::quote::__private::push_ident(&mut _s, "let");
+                        ::quote::__private::push_ident(&mut _s, "id_to_find");
+                        ::quote::__private::push_eq(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "self");
+                        ::quote::__private::push_dot(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "map");
+                        ::quote::__private::push_group(
+                            &mut _s,
+                            ::quote::__private::Delimiter::Bracket,
+                            {
+                                let mut _s = ::quote::__private::TokenStream::new();
+                                ::quote::__private::push_group(
+                                    &mut _s,
+                                    ::quote::__private::Delimiter::Parenthesis,
+                                    {
+                                        let mut _s = ::quote::__private::TokenStream::new();
+                                        ::quote::__private::push_ident(&mut _s, "x");
+                                        ::quote::__private::push_comma(&mut _s);
+                                        ::quote::__private::push_ident(&mut _s, "y");
+                                        _s
+                                    },
+                                );
+                                _s
+                            },
+                        );
+                        ::quote::__private::push_semi(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "if");
+                        ::quote::__private::push_bang(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "id_to_find");
+                        ::quote::__private::push_dot(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "is_some");
+                        ::quote::__private::push_group(
+                            &mut _s,
+                            ::quote::__private::Delimiter::Parenthesis,
+                            ::quote::__private::TokenStream::new(),
+                        );
+                        ::quote::__private::push_group(
+                            &mut _s,
+                            ::quote::__private::Delimiter::Brace,
+                            {
+                                let mut _s = ::quote::__private::TokenStream::new();
+                                ::quote::__private::push_ident(&mut _s, "return");
+                                ::quote::__private::push_ident(&mut _s, "None");
+                                ::quote::__private::push_semi(&mut _s);
+                                _s
+                            },
+                        );
+                        ::quote::__private::push_ident(&mut _s, "return");
+                        ::quote::__private::push_ident(&mut _s, "self");
+                        ::quote::__private::push_dot(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "entities");
+                        ::quote::__private::push_dot(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "get");
+                        ::quote::__private::push_group(
+                            &mut _s,
+                            ::quote::__private::Delimiter::Parenthesis,
+                            {
+                                let mut _s = ::quote::__private::TokenStream::new();
+                                ::quote::__private::push_and(&mut _s);
+                                ::quote::__private::push_ident(&mut _s, "id_to_find");
+                                ::quote::__private::push_dot(&mut _s);
+                                ::quote::__private::push_ident(&mut _s, "unwrap");
+                                ::quote::__private::push_group(
+                                    &mut _s,
+                                    ::quote::__private::Delimiter::Parenthesis,
+                                    ::quote::__private::TokenStream::new(),
+                                );
+                                _s
+                            },
+                        );
+                        ::quote::__private::push_semi(&mut _s);
+                        _s
+                    },
+                );
+                ::quote::__private::push_ident(&mut _s, "fn");
+                ::quote::__private::push_ident(&mut _s, "find_by_value");
+                ::quote::__private::push_lt(&mut _s);
+                ::quote::__private::push_ident(&mut _s, "F");
+                ::quote::__private::push_gt(&mut _s);
+                ::quote::__private::push_group(
+                    &mut _s,
+                    ::quote::__private::Delimiter::Parenthesis,
+                    {
+                        let mut _s = ::quote::__private::TokenStream::new();
+                        ::quote::__private::push_and(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "mut");
+                        ::quote::__private::push_ident(&mut _s, "self");
+                        ::quote::__private::push_comma(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "filter_func");
+                        ::quote::__private::push_colon(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "F");
+                        _s
+                    },
+                );
+                ::quote::__private::push_rarrow(&mut _s);
+                ::quote::__private::push_ident(&mut _s, "Vec");
+                ::quote::__private::push_lt(&mut _s);
+                ::quote::__private::push_and(&mut _s);
+                ::quote::ToTokens::to_tokens(&original_name, &mut _s);
+                ::quote::__private::push_gt(&mut _s);
+                ::quote::__private::push_ident(&mut _s, "where");
+                ::quote::__private::push_ident(&mut _s, "F");
+                ::quote::__private::push_colon(&mut _s);
+                ::quote::__private::push_ident(&mut _s, "Fn");
+                ::quote::__private::push_group(
+                    &mut _s,
+                    ::quote::__private::Delimiter::Parenthesis,
+                    {
+                        let mut _s = ::quote::__private::TokenStream::new();
+                        ::quote::__private::push_and(&mut _s);
+                        ::quote::ToTokens::to_tokens(&original_name, &mut _s);
+                        _s
+                    },
+                );
+                ::quote::__private::push_rarrow(&mut _s);
+                ::quote::__private::push_ident(&mut _s, "bool");
+                ::quote::__private::push_comma(&mut _s);
+                ::quote::__private::push_group(
+                    &mut _s,
+                    ::quote::__private::Delimiter::Brace,
+                    {
+                        let mut _s = ::quote::__private::TokenStream::new();
+                        ::quote::__private::push_ident(&mut _s, "let");
+                        ::quote::__private::push_ident(&mut _s, "mut");
+                        ::quote::__private::push_ident(&mut _s, "found");
+                        ::quote::__private::push_colon(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "Vec");
+                        ::quote::__private::push_lt(&mut _s);
+                        ::quote::__private::push_and(&mut _s);
+                        ::quote::ToTokens::to_tokens(&original_name, &mut _s);
+                        ::quote::__private::push_gt(&mut _s);
+                        ::quote::__private::push_eq(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "vec");
+                        ::quote::__private::push_bang(&mut _s);
+                        ::quote::__private::push_group(
+                            &mut _s,
+                            ::quote::__private::Delimiter::Parenthesis,
+                            ::quote::__private::TokenStream::new(),
+                        );
+                        ::quote::__private::push_semi(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "let");
+                        ::quote::__private::push_ident(&mut _s, "filtered_items");
+                        ::quote::__private::push_eq(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "self");
+                        ::quote::__private::push_dot(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "entities");
+                        ::quote::__private::push_dot(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "iter");
+                        ::quote::__private::push_group(
+                            &mut _s,
+                            ::quote::__private::Delimiter::Parenthesis,
+                            ::quote::__private::TokenStream::new(),
+                        );
+                        ::quote::__private::push_dot(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "filter");
+                        ::quote::__private::push_group(
+                            &mut _s,
+                            ::quote::__private::Delimiter::Parenthesis,
+                            {
+                                let mut _s = ::quote::__private::TokenStream::new();
+                                ::quote::__private::push_or(&mut _s);
+                                ::quote::__private::push_group(
+                                    &mut _s,
+                                    ::quote::__private::Delimiter::Parenthesis,
+                                    {
+                                        let mut _s = ::quote::__private::TokenStream::new();
+                                        ::quote::__private::push_underscore(&mut _s);
+                                        ::quote::__private::push_comma(&mut _s);
+                                        ::quote::__private::push_ident(&mut _s, "v");
+                                        _s
+                                    },
+                                );
+                                ::quote::__private::push_or(&mut _s);
+                                ::quote::__private::push_ident(&mut _s, "filter_func");
+                                ::quote::__private::push_group(
+                                    &mut _s,
+                                    ::quote::__private::Delimiter::Parenthesis,
+                                    {
+                                        let mut _s = ::quote::__private::TokenStream::new();
+                                        ::quote::__private::push_ident(&mut _s, "v");
+                                        _s
+                                    },
+                                );
+                                _s
+                            },
+                        );
+                        ::quote::__private::push_dot(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "for_each");
+                        ::quote::__private::push_group(
+                            &mut _s,
+                            ::quote::__private::Delimiter::Parenthesis,
+                            {
+                                let mut _s = ::quote::__private::TokenStream::new();
+                                ::quote::__private::push_or(&mut _s);
+                                ::quote::__private::push_group(
+                                    &mut _s,
+                                    ::quote::__private::Delimiter::Parenthesis,
+                                    {
+                                        let mut _s = ::quote::__private::TokenStream::new();
+                                        ::quote::__private::push_underscore(&mut _s);
+                                        ::quote::__private::push_comma(&mut _s);
+                                        ::quote::__private::push_ident(&mut _s, "v");
+                                        _s
+                                    },
+                                );
+                                ::quote::__private::push_or(&mut _s);
+                                ::quote::__private::push_group(
+                                    &mut _s,
+                                    ::quote::__private::Delimiter::Brace,
+                                    {
+                                        let mut _s = ::quote::__private::TokenStream::new();
+                                        ::quote::__private::push_ident(&mut _s, "found");
+                                        ::quote::__private::push_dot(&mut _s);
+                                        ::quote::__private::push_ident(&mut _s, "push");
+                                        ::quote::__private::push_group(
+                                            &mut _s,
+                                            ::quote::__private::Delimiter::Parenthesis,
+                                            {
+                                                let mut _s = ::quote::__private::TokenStream::new();
+                                                ::quote::__private::push_ident(&mut _s, "v");
+                                                _s
+                                            },
+                                        );
+                                        ::quote::__private::push_semi(&mut _s);
+                                        _s
+                                    },
+                                );
+                                _s
+                            },
+                        );
+                        ::quote::__private::push_semi(&mut _s);
+                        ::quote::__private::push_ident(&mut _s, "return");
+                        ::quote::__private::push_ident(&mut _s, "found");
+                        ::quote::__private::push_semi(&mut _s);
+                        _s
+                    },
+                );
+                _s
+            },
+        );
+        _s
+    };
+    exp.into()
+}
+const _: () = {
+    extern crate proc_macro;
+    #[rustc_proc_macro_decls]
+    #[used]
+    #[allow(deprecated)]
+    static _DECLS: &[proc_macro::bridge::client::ProcMacro] = &[
+        proc_macro::bridge::client::ProcMacro::attr("define_as_grid", define_as_grid),
+    ];
+};

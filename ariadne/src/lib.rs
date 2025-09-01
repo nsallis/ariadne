@@ -2,8 +2,8 @@
 extern crate proc_macro;
 use proc_macro::TokenStream;
 use quote::quote;
-use std::collections::HashMap;
-use syn::{Data, DeriveInput, Fields, ItemStruct, parse_macro_input};
+use std::{any::{Any, TypeId}, collections::HashMap};
+use syn::{parse_macro_input, parse_quote, parse_str, Data, DeriveInput, Fields, ItemStruct, Type};
 
 #[proc_macro_attribute]
 pub fn define_as_grid(_attr: TokenStream, item: TokenStream) -> TokenStream {
@@ -24,12 +24,22 @@ pub fn define_as_grid(_attr: TokenStream, item: TokenStream) -> TokenStream {
     };
     let required_field_found = fields
         .iter()
-        .any(|field| field.ident.as_ref().map_or(false, |ident| ident == "id"));
+        .any(|field| field.ident.as_ref().map_or(false, |ident| ident == "id") && match &field.ty {
+            // make sure the field is i64
+            Type::Path(type_path) => {
+                if type_path.path.is_ident("i64") {
+                    return true;
+                }
+                return false;
+            },
+            _ => {
+                return false;
+            }
+        });
 
     if !required_field_found {
-        panic!("Struct must contain a field named 'id'");
+        panic!("Struct must contain a field named 'id' of type i64");
     }
-    // TODO: similarly, we should check that the id field is an i64
 
     let original_name = input_struct.ident;
     let derived_name = syn::Ident::new(&format!("{}Grid", original_name), original_name.span());

@@ -4,11 +4,22 @@ use array2d::Array2D;
 use ariadne;
 
 #[derive(Debug, Clone)]
+enum EntityType {
+    Player,
+    Wall,
+    Enemy
+}
+
+#[derive(Debug, Clone)]
 #[define_as_grid]
-pub struct MyEntity {
+pub struct Entity {
     id: i64,
     name: String,
+    entity_type: EntityType
 }
+
+
+
 
 #[cfg(test)]
 mod world_grid {
@@ -16,10 +27,11 @@ mod world_grid {
 
     #[test]
     fn it_creates_a_grid_and_adds_an_entity() {
-        let mut world_grid = MyEntityGrid::new(3, 3);
-        let some_ent = MyEntity {
+        let mut world_grid = EntityGrid::new(3, 3);
+        let some_ent = Entity {
             id: 1,
             name: "foo".to_string(),
+            entity_type: EntityType::Player
         };
         world_grid.add(&some_ent, 1, 1);
         let found_entity = world_grid.get_by_id(1).unwrap();
@@ -29,10 +41,11 @@ mod world_grid {
 
     #[test]
     fn it_removes_an_entity_by_id() {
-        let mut world_grid = MyEntityGrid::new(3, 3);
-        let some_ent = MyEntity {
+        let mut world_grid = EntityGrid::new(3, 3);
+        let some_ent = Entity {
             id: 1,
             name: "foo".to_string(),
+            entity_type: EntityType::Player
         };
         world_grid.add(&some_ent, 1, 1);
         world_grid.remove_by_id(1);
@@ -42,10 +55,11 @@ mod world_grid {
 }
 
 fn main() {
-    let mut world_grid = MyEntityGrid::new(3, 3);
-    let some_ent = MyEntity {
+    let mut world_grid = EntityGrid::new(3, 3);
+    let some_ent = Entity {
         id: 1,
         name: "foo".to_string(),
+        entity_type: EntityType::Player
     };
     // add entity
     world_grid.add(&some_ent, 1, 1);
@@ -83,7 +97,7 @@ fn main() {
     });
     // show that update worked
     println!("entity found after adding again: {:?}", world_grid.get_by_position(2, 2));
-    let found = world_grid.find_by_value(|entity| entity.name == "pumba".to_string());
+    let found = world_grid.find_by_value(|entity| entity.name == "pumba2".to_string());
     // let found = world_grid.find_by_value(|entity| {entity.name == "pumba".to_string()});
     println!("found by value: {:?}", found);
 }
