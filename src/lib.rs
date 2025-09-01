@@ -55,6 +55,14 @@ pub fn define_as_grid(_attr: TokenStream, item: TokenStream) -> TokenStream {
                 self.map[(x, y)] = Some(entity.id);
             }
 
+            fn update(&mut self, id: i64, entity: &#original_name) {
+                let current_entity = self.entities.get(&id);
+                if !current_entity.is_some() {
+                    return;
+                }
+                self.entities.insert(id, entity.clone());
+            }
+
             fn remove_by_id(&mut self, id: i64) {
                 self.entities.remove(&id);
                 let mut remove_x: Option<usize> = None;
@@ -83,11 +91,9 @@ pub fn define_as_grid(_attr: TokenStream, item: TokenStream) -> TokenStream {
                 self.entities.remove(&id_to_remove.unwrap());
                 self.map[(x, y)] = None;
             }
-            // TODO: get_by_id
             fn get_by_id(&mut self, id: i64) -> Option<&#original_name> {
                 return self.entities.get(&id);
             }
-            // TODO: get_by_position
             fn get_by_position(&mut self, x: usize, y: usize) -> Option<&#original_name> {
                 let id_to_find = self.map[(x, y)];
                 if !id_to_find.is_some() {
@@ -95,6 +101,7 @@ pub fn define_as_grid(_attr: TokenStream, item: TokenStream) -> TokenStream {
                 }
                 return self.entities.get(&id_to_find.unwrap());
             }
+
         }
     };
 
