@@ -68,14 +68,22 @@ fn main() {
     // show that get_by_id with non-existent id returns None
     println!("entity found after remove (none): {:?}", world_grid.get_by_id(1));
     world_grid.add(&some_ent, 2, 2);
-    // work with entity returned by position
-    let mut ent = world_grid.get_by_position(2, 2).unwrap().clone();
     // update its data
-    ent.name = "pumba".to_string();
-    world_grid.update(1, &ent);
+    world_grid.update_by_id(1, |entity| {
+        let mut updated = entity.to_owned();
+        // let mut updated = entity.clone();
+        updated.name = "pumba".to_string();
+        return updated;
+    });
+    world_grid.update_by_position(2, 2, |entity| {
+        let mut updated = entity.to_owned();
+        // let mut updated = entity.clone();
+        updated.name = "pumba2".to_string();
+        return updated;
+    });
     // show that update worked
     println!("entity found after adding again: {:?}", world_grid.get_by_position(2, 2));
-    let found = world_grid.find_simple(|entity| entity.name == "pumba".to_string());
+    let found = world_grid.find_by_value(|entity| entity.name == "pumba".to_string());
     // let found = world_grid.find_by_value(|entity| {entity.name == "pumba".to_string()});
     println!("found by value: {:?}", found);
 }

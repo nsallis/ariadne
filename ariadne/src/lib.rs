@@ -56,12 +56,30 @@ pub fn define_as_grid(_attr: TokenStream, item: TokenStream) -> TokenStream {
                 self.map[(x, y)] = Some(entity.id);
             }
 
-            fn update(&mut self, id: i64, entity: &#original_name) {
+            fn update_by_id<F>(&mut self, id: i64, updater: F)
+            where
+                F: Fn(&#original_name) -> #original_name {
                 let current_entity = self.entities.get(&id);
                 if !current_entity.is_some() {
                     return;
                 }
-                self.entities.insert(id, entity.clone());
+                let updated = updater(current_entity.unwrap());
+                self.entities.insert(id, updated);
+            }
+
+            fn update_by_position<F>(&mut self, x: usize, y: usize, updater: F)
+            where
+                F: Fn(&#original_name) -> #original_name {
+                let id_to_use = self.map[(x, y)];
+                if !id_to_use.is_some() {
+                    return;
+                }
+                let current_entity = self.entities.get(&id_to_use.unwrap());
+                if !current_entity.is_some() {
+                    return;
+                }
+                let updated = updater(current_entity.unwrap());
+                self.entities.insert(id_to_use.unwrap(), updated);
             }
 
             fn remove_by_id(&mut self, id: i64) {
@@ -103,12 +121,12 @@ pub fn define_as_grid(_attr: TokenStream, item: TokenStream) -> TokenStream {
                 return self.entities.get(&id_to_find.unwrap());
             }
 
-            fn find_by_value<F>(&mut self, operation: F) -> Vec<&#original_name> 
+            fn find_by_value<F>(&mut self, filter_func: F) -> Vec<&#original_name> 
             where
                 F: Fn(&#original_name) -> bool,
             {
                 let mut found: Vec<&#original_name> = vec!();
-                let filtered_items = self.entities.iter().filter(|(_, v)| operation(v)).for_each(|(_, v)| {
+                let filtered_items = self.entities.iter().filter(|(_, v)| filter_func(v)).for_each(|(_, v)| {
                     found.push(v);
                 });
                 return found;
