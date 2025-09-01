@@ -75,7 +75,7 @@ fn main() {
     world_grid.update(1, &ent);
     // show that update worked
     println!("entity found after adding again: {:?}", world_grid.get_by_position(2, 2));
-    let found = world_grid.find_simple();
+    let found = world_grid.find_simple(|entity| entity.name == "pumba".to_string());
     // let found = world_grid.find_by_value(|entity| {entity.name == "pumba".to_string()});
     println!("found by value: {:?}", found);
 }
