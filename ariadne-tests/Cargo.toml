@@ -1,0 +1,8 @@
+[package]
+name = "ariadne-test"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+ariadne = {path = "../ariadne"}
+array2d = "0.3.2"
