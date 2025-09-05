@@ -11,12 +11,13 @@ enum EntityType {
     Enemy
 }
 
-#[derive(Debug, Clone)]
 #[define_as_grid]
 pub struct Entity {
     id: Uuid,
     name: String,
-    entity_type: EntityType
+    entity_type: EntityType,
+    x: usize,
+    y: usize
 }
 
 
@@ -33,9 +34,12 @@ mod world_grid {
         let some_ent = Entity {
             id: id,
             name: "foo".to_string(),
-            entity_type: EntityType::Player
+            entity_type: EntityType::Player,
+            x: 1,
+            y: 1
         };
-        world_grid.add(&some_ent, 1, 1);
+        println!("x: {:?}", some_ent.x);
+        world_grid.add(&some_ent);
         let found_entity = world_grid.get_by_id(id).unwrap();
         assert_eq!(found_entity.name, "foo".to_string());
         assert_eq!(found_entity.id, id);
@@ -48,9 +52,11 @@ mod world_grid {
         let some_ent = Entity {
             id: id,
             name: "foo".to_string(),
-            entity_type: EntityType::Player
+            entity_type: EntityType::Player,
+            x: 1,
+            y: 1
         };
-        world_grid.add(&some_ent, 1, 1);
+        world_grid.add(&some_ent);
         world_grid.remove_by_id(id);
         let found_entity = world_grid.get_by_id(id);
         assert_eq!(found_entity.is_some(), false);
@@ -63,29 +69,31 @@ fn main() {
     let some_ent = Entity {
         id: id,
         name: "foo".to_string(),
-        entity_type: EntityType::Player
+        entity_type: EntityType::Player,
+        x: 1,
+        y: 1
     };
     // add entity
-    world_grid.add(&some_ent, 1, 1);
+    world_grid.add(&some_ent);
     println!("world grid after add: {:?}", world_grid);
     // remove_by_id
     world_grid.remove_by_id(id);
     println!("world grid after remove by id: {:?}", world_grid);
     // add again with different position
-    world_grid.add(&some_ent, 2, 2);
+    world_grid.add(&some_ent);
     println!("world grid after add again: {:?}", world_grid);
     // remove by position
     world_grid.remove_by_position(2, 2);
     println!("world grid after remove by position: {:?}", world_grid);
 
     // add again
-    world_grid.add(&some_ent, 1, 1);
+    world_grid.add(&some_ent);
     // show that get_by_id works
     println!("entity found after add: {:?}", world_grid.get_by_id(id));
     world_grid.remove_by_id(id);
     // show that get_by_id with non-existent id returns None
     println!("entity found after remove (none): {:?}", world_grid.get_by_id(id));
-    world_grid.add(&some_ent, 2, 2);
+    world_grid.add(&some_ent);
     // update its data
     world_grid.update_by_id(id, |entity| {
         let mut updated = entity.to_owned();

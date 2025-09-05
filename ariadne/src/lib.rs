@@ -3,7 +3,7 @@ extern crate proc_macro;
 use proc_macro::TokenStream;
 use quote::quote;
 use std::{any::{Any, TypeId}, collections::HashMap};
-use syn::{parse_macro_input, parse_quote, parse_str, Data, DeriveInput, Fields, ItemStruct, Type};
+use syn::{parse::Parser, parse_macro_input, parse_quote, parse_str, punctuated::Punctuated, token::Comma, Data, DeriveInput, Field, Fields, ItemStruct, Type};
 use uuid::{Uuid};
 
 #[proc_macro_attribute]
@@ -12,7 +12,7 @@ pub fn define_as_grid(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let original = item.clone();
     let input_struct = parse_macro_input!(item as ItemStruct);
     let ast = parse_macro_input!(input as DeriveInput);
-    let original_struct = parse_macro_input!(original as DeriveInput);
+    let mut original_struct = parse_macro_input!(original as DeriveInput);
     let struct_data = if let Data::Struct(data_struct) = ast.data {
         data_struct
     } else {
@@ -23,30 +23,49 @@ pub fn define_as_grid(_attr: TokenStream, item: TokenStream) -> TokenStream {
     } else {
         panic!("Ariadne only supports structs with named fields");
     };
-    let required_field_found = fields
-        .iter()
-        .any(|field| field.ident.as_ref().map_or(false, |ident| ident == "id") && match &field.ty {
-            // make sure the field is Uuid
-            Type::Path(type_path) => {
-                if type_path.path.is_ident("Uuid") {
-                    return true;
-                }
-                return false;
-            },
-            _ => {
-                return false;
-            }
-        });
+    let id_field_found = validate_field(&fields, "id".to_string(), "Uuid".to_string());
+    let x_field_found = validate_field(&fields, "x".to_string(), "usize".to_string());
+    let y_field_found = validate_field(&fields, "y".to_string(), "usize".to_string());
 
-    if !required_field_found {
+        
+    // cool way to add fields to the struct. Unfortunately we don't really need this. Keeping it here for reference for now
+    // match &mut original_struct.data {
+    //     syn::Data::Struct(ast_struct_data) => {
+    //                     if let syn::Fields::Named(fields) = &mut ast_struct_data.fields {
+    //                         // Create the new field
+    //                         let x_field: syn::Field = syn::Field::parse_named
+    //                             .parse2(quote! { pub x: usize })
+    //                             .unwrap();
+    //                         let y_field: syn::Field = syn::Field::parse_named
+    //                             .parse2(quote! { pub y: usize })
+    //                             .unwrap();
+        
+    //                         // Add the new field to the struct
+    //                         fields.named.push(x_field);
+    //                         fields.named.push(y_field);
+    //                     }
+    //         }
+    //     Data::Struct(data_struct) => todo!(),
+    //     Data::Enum(data_enum) => todo!(),
+    //     Data::Union(data_union) => todo!(),
+    // }
+
+    if !id_field_found {
         panic!("Struct must contain a field named 'id' of type Uuid");
     }
 
+    if !x_field_found {
+        panic!("Struct must contain a field named 'x' of type usize");
+    }
+
+    if !y_field_found {
+        panic!("Struct must contain a field named 'y' of type usize");
+    }
     let original_name = input_struct.ident;
     let derived_name = syn::Ident::new(&format!("{}Grid", original_name), original_name.span());
 
     let exp = quote! {
-
+        #[derive(Debug, Clone)]
         #original_struct
 
         #[derive(Debug)]
@@ -63,9 +82,9 @@ pub fn define_as_grid(_attr: TokenStream, item: TokenStream) -> TokenStream {
                 }
             }
 
-            fn add(&mut self, entity: &#original_name, x: usize, y: usize) {
+            fn add(&mut self, entity: &#original_name) {
                 self.entities.insert(entity.id, entity.clone());
-                self.map[(x, y)] = Some(entity.id);
+                self.map[(entity.x, entity.y)] = Some(entity.id);
             }
 
             fn update_by_id<F>(&mut self, id: Uuid, updater: F)
@@ -76,6 +95,10 @@ pub fn define_as_grid(_attr: TokenStream, item: TokenStream) -> TokenStream {
                     return;
                 }
                 let updated = updater(current_entity.unwrap());
+                if updated.x != current_entity.unwrap().x || updated.y != current_entity.unwrap().y {
+                    self.map[(current_entity.unwrap().x, current_entity.unwrap().y)] = None;
+                    self.map[(updated.x, updated.y)] = Some(updated.id);
+                }
                 self.entities.insert(id, updated);
             }
 
@@ -91,6 +114,10 @@ pub fn define_as_grid(_attr: TokenStream, item: TokenStream) -> TokenStream {
                     return;
                 }
                 let updated = updater(current_entity.unwrap());
+                if updated.x != current_entity.unwrap().x || updated.y != current_entity.unwrap().y {
+                    self.map[(current_entity.unwrap().x, current_entity.unwrap().y)] = None;
+                    self.map[(updated.x, updated.y)] = Some(updated.id);
+                }
                 self.entities.insert(id_to_use.unwrap(), updated);
             }
 
@@ -122,9 +149,11 @@ pub fn define_as_grid(_attr: TokenStream, item: TokenStream) -> TokenStream {
                 self.entities.remove(&id_to_remove.unwrap());
                 self.map[(x, y)] = None;
             }
+
             fn get_by_id(&mut self, id: Uuid) -> Option<&#original_name> {
                 return self.entities.get(&id);
             }
+
             fn get_by_position(&mut self, x: usize, y: usize) -> Option<&#original_name> {
                 let id_to_find = self.map[(x, y)];
                 if !id_to_find.is_some() {
@@ -148,4 +177,22 @@ pub fn define_as_grid(_attr: TokenStream, item: TokenStream) -> TokenStream {
     };
 
     exp.into()
+}
+
+fn validate_field(fields: &Punctuated<Field, Comma>, field_name: String, field_type: String) -> bool {
+    let required_field_found = fields
+        .iter()
+        .any(|field| field.ident.as_ref().map_or(false, |ident| *ident == field_name) && match &field.ty {
+            // make sure the field is Uuid
+            Type::Path(type_path) => {
+                if type_path.path.is_ident(&field_type) {
+                    return true;
+                }
+                return false;
+            },
+            _ => {
+                return false;
+            }
+        });
+        return required_field_found;
 }
