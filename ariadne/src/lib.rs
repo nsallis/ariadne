@@ -4,6 +4,7 @@ use proc_macro::TokenStream;
 use quote::quote;
 use std::{any::{Any, TypeId}, collections::HashMap};
 use syn::{parse_macro_input, parse_quote, parse_str, Data, DeriveInput, Fields, ItemStruct, Type};
+use uuid::{Uuid};
 
 #[proc_macro_attribute]
 pub fn define_as_grid(_attr: TokenStream, item: TokenStream) -> TokenStream {
@@ -25,9 +26,9 @@ pub fn define_as_grid(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let required_field_found = fields
         .iter()
         .any(|field| field.ident.as_ref().map_or(false, |ident| ident == "id") && match &field.ty {
-            // make sure the field is i64
+            // make sure the field is Uuid
             Type::Path(type_path) => {
-                if type_path.path.is_ident("i64") {
+                if type_path.path.is_ident("Uuid") {
                     return true;
                 }
                 return false;
@@ -38,19 +39,20 @@ pub fn define_as_grid(_attr: TokenStream, item: TokenStream) -> TokenStream {
         });
 
     if !required_field_found {
-        panic!("Struct must contain a field named 'id' of type i64");
+        panic!("Struct must contain a field named 'id' of type Uuid");
     }
 
     let original_name = input_struct.ident;
     let derived_name = syn::Ident::new(&format!("{}Grid", original_name), original_name.span());
 
     let exp = quote! {
+
         #original_struct
 
         #[derive(Debug)]
         pub struct #derived_name {
-            pub entities: HashMap<i64, #original_name>,
-            pub map: Array2D<Option<i64>>
+            pub entities: HashMap<Uuid, #original_name>,
+            pub map: Array2D<Option<Uuid>>
         }
 
         impl #derived_name {
@@ -66,7 +68,7 @@ pub fn define_as_grid(_attr: TokenStream, item: TokenStream) -> TokenStream {
                 self.map[(x, y)] = Some(entity.id);
             }
 
-            fn update_by_id<F>(&mut self, id: i64, updater: F)
+            fn update_by_id<F>(&mut self, id: Uuid, updater: F)
             where
                 F: Fn(&#original_name) -> #original_name {
                 let current_entity = self.entities.get(&id);
@@ -92,7 +94,7 @@ pub fn define_as_grid(_attr: TokenStream, item: TokenStream) -> TokenStream {
                 self.entities.insert(id_to_use.unwrap(), updated);
             }
 
-            fn remove_by_id(&mut self, id: i64) {
+            fn remove_by_id(&mut self, id: Uuid) {
                 self.entities.remove(&id);
                 let mut remove_x: Option<usize> = None;
                 let mut remove_y: Option<usize> = None;
@@ -120,7 +122,7 @@ pub fn define_as_grid(_attr: TokenStream, item: TokenStream) -> TokenStream {
                 self.entities.remove(&id_to_remove.unwrap());
                 self.map[(x, y)] = None;
             }
-            fn get_by_id(&mut self, id: i64) -> Option<&#original_name> {
+            fn get_by_id(&mut self, id: Uuid) -> Option<&#original_name> {
                 return self.entities.get(&id);
             }
             fn get_by_position(&mut self, x: usize, y: usize) -> Option<&#original_name> {

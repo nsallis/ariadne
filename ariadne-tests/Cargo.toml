@@ -6,3 +6,4 @@ edition = "2024"
 [dependencies]
 ariadne = {path = "../ariadne"}
 array2d = "0.3.2"
+uuid = {version = "1.18.1", features = ["v4"]}
