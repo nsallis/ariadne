@@ -150,11 +150,11 @@ pub fn define_as_grid(_attr: TokenStream, item: TokenStream) -> TokenStream {
                 self.map[(x, y)] = None;
             }
 
-            fn get_by_id(&mut self, id: Uuid) -> Option<&#original_name> {
+            fn get_by_id(&self, id: Uuid) -> Option<&#original_name> {
                 return self.entities.get(&id);
             }
 
-            fn get_by_position(&mut self, x: usize, y: usize) -> Option<&#original_name> {
+            fn get_by_position(&self, x: usize, y: usize) -> Option<&#original_name> {
                 let id_to_find = self.map[(x, y)];
                 if !id_to_find.is_some() {
                     return None;
@@ -162,7 +162,7 @@ pub fn define_as_grid(_attr: TokenStream, item: TokenStream) -> TokenStream {
                 return self.entities.get(&id_to_find.unwrap());
             }
 
-            fn find_by_value<F>(&mut self, filter_func: F) -> Vec<&#original_name> 
+            fn find_by_value<F>(&self, filter_func: F) -> Vec<&#original_name> 
             where
                 F: Fn(&#original_name) -> bool,
             {
