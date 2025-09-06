@@ -150,25 +150,33 @@ pub fn define_as_grid(_attr: TokenStream, item: TokenStream) -> TokenStream {
                 self.map[(x, y)] = None;
             }
 
-            fn get_by_id(&mut self, id: Uuid) -> Option<&#original_name> {
-                return self.entities.get(&id);
+            fn get_by_id(&mut self, id: Uuid) -> Option<#original_name> {
+                let found = self.entities.get(&id);
+                if found.is_some() {
+                    return Some(found.unwrap().clone());
+                }
+                return None;
             }
 
-            fn get_by_position(&mut self, x: usize, y: usize) -> Option<&#original_name> {
+            fn get_by_position(&mut self, x: usize, y: usize) -> Option<#original_name> {
                 let id_to_find = self.map[(x, y)];
                 if !id_to_find.is_some() {
                     return None;
                 }
-                return self.entities.get(&id_to_find.unwrap());
+                let found = self.entities.get(&id_to_find.unwrap());
+                if found.is_some() {
+                    return Some(found.unwrap().clone());
+                }
+                return None;
             }
 
-            fn find_by_value<F>(&mut self, filter_func: F) -> Vec<&#original_name> 
+            fn find_by_value<F>(&mut self, filter_func: F) -> Vec<#original_name> 
             where
                 F: Fn(&#original_name) -> bool,
             {
-                let mut found: Vec<&#original_name> = vec!();
+                let mut found: Vec<#original_name> = vec!();
                 let filtered_items = self.entities.iter().filter(|(_, v)| filter_func(v)).for_each(|(_, v)| {
-                    found.push(v);
+                    found.push(v.clone());
                 });
                 return found;
             }
